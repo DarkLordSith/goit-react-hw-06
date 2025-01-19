@@ -1,8 +1,10 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
+import { useSelector, useDispatch } from "react-redux";
+import { addContact } from "../../redux/contactsSlice";
 import * as Yup from "yup";
-import PropTypes from "prop-types";
 import styles from "./ContactForm.module.css";
 
+// Валідаційна схема
 const validationSchema = Yup.object().shape({
   name: Yup.string()
     .min(3, "Name must be at least 3 characters")
@@ -12,29 +14,38 @@ const validationSchema = Yup.object().shape({
     .matches(/^\d{3}-\d{2}-\d{2}$/, "Phone number must be in format xxx-xx-xx")
     .required("Phone number is required"),
 });
-const ContactForm = ({ onSubmit }) => {
-  const initialValues = { name: "", number: "" };
+
+const ContactsForm = () => {
+  const contacts = useSelector((state) => state.contacts.items);
+  const dispatch = useDispatch();
 
   const handleSubmit = (values, { resetForm }) => {
-    onSubmit(values);
+    const { name, number } = values;
+
+    if (contacts.some((contact) => contact.name === name)) {
+      alert(`${name} вже є у списку контактів.`);
+      return;
+    }
+
+    dispatch(addContact({ id: Date.now().toString(), name, number }));
     resetForm();
   };
 
   return (
     <Formik
-      initialValues={initialValues}
-      onSubmit={handleSubmit}
+      initialValues={{ name: "", number: "" }}
       validationSchema={validationSchema}
+      onSubmit={handleSubmit}
     >
       <Form className={styles.form}>
         <label>
           Name:
-          <Field name="name" />
+          <Field type="text" name="name" />
           <ErrorMessage name="name" component="div" className={styles.error} />
         </label>
         <label>
           Number:
-          <Field name="number" />
+          <Field type="text" name="number" />
           <ErrorMessage
             name="number"
             component="div"
@@ -42,15 +53,11 @@ const ContactForm = ({ onSubmit }) => {
           />
         </label>
         <button type="submit" className={styles.button}>
-          Add Contact
+          Add contact
         </button>
       </Form>
     </Formik>
   );
 };
 
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
-
-export default ContactForm;
+export default ContactsForm;
